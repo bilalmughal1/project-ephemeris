@@ -51,3 +51,29 @@ Choosing a simpler ts_start BETWEEN :start AND :end rule would introduce a criti
 ## Rejected Alternatives
 
 Start-Time Containment (ts_start within window): This was rejected because it treats durations as point-in-time events. While arguably simpler to express, it fails operational requirements by dropping highly relevant, boundary-straddling passes.
+
+## Proximity Queries: Vertex-Based Great-Circle Distance vs. Linear Interpolation
+
+## The Problem
+
+To implement a "click-to-query" feature on the map, the API must calculate how close a satellite's track comes to a user-selected coordinate. Doing this inside our DuckDB environment presents two specific challenges:
+
+The Coordinate Distortion Trap: Measuring distance using raw degrees (planar Cartesian math on longitude/latitude) introduces severe errors because a degree of longitude shrinks to zero as you move from the equator to the poles. Degrees are not kilometers.
+
+Missing Geodesic Functions: The current DuckDB build lacks a native GEOGRAPHY data type and an ST_ClosestPoint function, meaning native geodesic point-to-line distance calculations are unavailable across our spatial paths.
+
+## The Decision
+
+I chose to evaluate proximity by calculating the true great-circle distance (ST_Distance_Sphere) from the clicked point directly to the 7 sampled vertices of each pass, converting the user-provided kilometer radius into meters.
+
+Instead of treating the pass as a continuous line string, the SQL query treats it as a known set of coordinates. It extracts the closest vertex distance to represent the pass's proximity.
+
+## Domain Justification & Limitations
+
+Because this method evaluates discrete vertices rather than a continuous line path, it introduces a geometric limitation: if the satellite's true closest approach happens exactly halfway between two vertices, the algorithm will overestimate the distance. Given our uniform ~70km vertex spacing, the spatial error is an estimate of scale, approximately half the vertex spacing, on the order of ~35km.
+
+However, in a satellite operations context, this error profile works in our favor because it errs toward false negatives, never false positives. It might occasionally exclude a marginal pass that barely skimmed the outer boundary of the radius, but it will never invent an artificial pass that didn't occur. For a tracking and tasking tool, dropping a borderline edge case is a safe operational failure mode; fabricating a fake satellite pass is a destructive one.
+
+## Rejected Alternatives
+
+Densified Linear Interpolation: We attempted to patch the vertex spacing gap by injecting interpolated points along the line string to create a dense path. This was rejected because interpolating raw, unprojected longitude/latitude coordinates lacks antimeridian awareness. When a satellite crosses the International Date Line, a naive interpolation algorithm draws a bogus straight path backward across the entire globe to connect the coordinates. This error manufactures massive false positives—calculating a proximity of 293km for a satellite that was physically 13,807km away on the other side of the planet. True point-to-line calculation requires heavy antimeridian-aware splitting or custom user-defined functions (UDFs), which are reserved for the next architectural iteration.
