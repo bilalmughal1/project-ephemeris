@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 const INITIAL_CENTER: [number, number] = [55, 25];
 const INITIAL_ZOOM = 2;
 
