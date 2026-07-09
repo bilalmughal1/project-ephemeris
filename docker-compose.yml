@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: ephemeris-api
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+    networks:
+      - ephemeris-network
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ephemeris-web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - ephemeris-network
+
+networks:
+  ephemeris-network:
+    driver: bridge

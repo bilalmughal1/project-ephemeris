@@ -1,0 +1,27 @@
+{
+  "name": "@ephemeris/api",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Telemetry database service for project ephemeris",
+  "main": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "duckdb": "^1.4.4",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.6.0",
+    "prettier": "^3.9.4",
+    "tsx": "^4.23.0",
+    "typescript": "^6.0.3"
+  }
+}

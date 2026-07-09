@@ -1,0 +1,16 @@
+{
+  "name": "ephemeris-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Spatiotemporal telemetry platform for satellite orbital ephemeris visualization and intersection analytics.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}

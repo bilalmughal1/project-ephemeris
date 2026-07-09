@@ -1,0 +1,32 @@
+# Dependency Streams
+node_modules/
+.pnpm-store/
+
+# Production Distribution
+dist/
+build/
+
+# Local Environment Variables
+.env
+.env.*
+!.env.example
+
+# DuckDB Runtime & System Lock Files
+*.db
+*.db.wal
+*.tmp
+duckdb/
+data/duckdb/
+
+# System/OS Overhead
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+
+#Data
+data/
+
+#claude
+.claude/
