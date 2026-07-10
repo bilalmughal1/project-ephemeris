@@ -1,0 +1,61 @@
+name: CI
+
+# Runs on every push and PR targeting main. Keeping both triggers means a
+# direct push to main (or a merge commit) gets checked too, not just PR branches.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel a stale run if new commits land on the same branch/PR while CI is
+# still running -- avoids burning minutes checking outdated code.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege default: this workflow only reads the repo, nothing else.
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Lint, test, and build (backend + frontend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      # Installs both the backend and frontend workspaces from the root
+      # lockfile in one shot. npm ci (not npm install) for reproducible,
+      # lockfile-exact installs.
+      - name: Install dependencies (npm workspaces)
+        run: npm ci
+
+      - name: Backend lint
+        run: npm run lint --workspace=backend
+
+      - name: Frontend lint
+        run: npm run lint --workspace=frontend
+
+      # Backend tests ingest a small fixture DB (backend/tests/fixtures.ts)
+      # via a temp-file DuckDB instance -- they do NOT touch the real 60MB
+      # data/Altair-2P5S-tracks-1w.json, which is gitignored and absent here.
+      - name: Backend tests
+        run: npm run test --workspace=backend
+
+      # `tsc` only -- does not start the server or run DB ingestion, so it
+      # doesn't need the real data file either.
+      - name: Backend build (typecheck + emit)
+        run: npm run build --workspace=backend
+
+      - name: Frontend build (typecheck + vite build)
+        run: npm run build --workspace=frontend
