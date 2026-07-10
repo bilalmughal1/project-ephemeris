@@ -24,9 +24,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-
-#Data
+# Data
 data/
 
-#claude
+# Claude
 .claude/
+*.tsbuildinfo
