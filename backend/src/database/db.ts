@@ -6,7 +6,13 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const DB_DIR = path.join(__dirname, "../../../duckdb");
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(__dirname, "../../../data");
+
+const DB_DIR = process.env.DB_DIR
+  ? path.resolve(process.env.DB_DIR)
+  : path.join(__dirname, "../../../duckdb");
 if (!fs.existsSync(DB_DIR)) {
   fs.mkdirSync(DB_DIR, { recursive: true });
 }
@@ -42,10 +48,7 @@ export const initDatabase = async (): Promise<void> => {
     await query("LOAD spatial;");
     console.log("[Database] DuckDB Spatial extension ready.");
 
-    const dataFilePath = path.resolve(
-      __dirname,
-      "../../../data/Altair-2P5S-tracks-1w.json",
-    );
+    const dataFilePath = path.join(DATA_DIR, "Altair-2P5S-tracks-1w.json");
     const normalizedDataPath = dataFilePath.replace(/\\/g, "/");
 
     if (!fs.existsSync(dataFilePath)) {
