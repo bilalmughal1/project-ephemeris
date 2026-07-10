@@ -59,3 +59,31 @@ jobs:
 
       - name: Frontend build (typecheck + vite build)
         run: npm run build --workspace=frontend
+
+  docker-build:
+    name: Docker image build (api + web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Runs alongside build-and-test rather than after it -- this job only
+    # proves the Dockerfiles build cleanly, independent of the lint/test
+    # results, so there's no reason to serialize them.
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Builds the api and web images from backend/Dockerfile.dev and
+      # frontend/Dockerfile.dev via docker-compose.yml. This does NOT need
+      # data/Altair-2P5S-tracks-1w.json: that 60MB file is gitignored and
+      # absent here, but it's only ever bind-mounted into the api container
+      # at runtime (see the `volumes:` entry in docker-compose.yml) -- it's
+      # never COPYed into either image, so it's outside the build context
+      # entirely and irrelevant to `build`.
+      #
+      # Deliberately BUILD only, not `up`: `up` would need that data file
+      # plus a running DuckDB ingestion, which is out of scope for a build
+      # sanity check. There's no deploy target for this project, so this
+      # job is the "CD" proof -- it confirms the deployable images actually
+      # build on clean infrastructure, without pretending to deploy anywhere.
+      - name: Build Docker images (api + web)
+        run: docker compose build
