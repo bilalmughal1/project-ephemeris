@@ -26,6 +26,7 @@ export const connection = db.connect();
 /**
  * Promisified query helper for clean async/await execution
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- DuckDB's .all() returns dynamically-typed rows; callers index into them by column name.
 export const query = (sql: string, params: any[] = []): Promise<any[]> => {
   return new Promise((resolve, reject) => {
     connection.all(sql, ...params, (err, rows) => {

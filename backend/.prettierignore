@@ -1,0 +1,5 @@
+dist
+duckdb
+data
+node_modules
+coverage
