@@ -1,13 +1,20 @@
 import type { CSSProperties } from "react";
-import { useSearchStore } from "../store/searchStore";
+import { DEFAULT_FROM, DEFAULT_TO, useSearchStore } from "../store/searchStore";
 
 // Same naive UTC treatment as FilterPanel's datetime-local handling.
 function isoToDatetimeLocal(iso: string): string {
   return iso.slice(0, 16);
 }
 
-function datetimeLocalToIso(value: string): string {
-  return `${value}:00Z`;
+// Guards against empty/partial datetime-local values (e.g. the user clears
+// the field) producing a malformed timestamp like ":00Z" -- always returns
+// a complete ISO-8601 string DuckDB can parse.
+function datetimeLocalToIso(value: string, fallback: string): string {
+  if (!value) return fallback;
+  // datetime-local yields "YYYY-MM-DDTHH:mm" (16 chars, no seconds) unless
+  // second-granularity is enabled, which yields "YYYY-MM-DDTHH:mm:ss" (19
+  // chars) -- append only what's missing so seconds never get doubled.
+  return value.length > 16 ? `${value}Z` : `${value}:00Z`;
 }
 
 export default function SearchPanel() {
@@ -43,7 +50,7 @@ export default function SearchPanel() {
         <input
           type="datetime-local"
           value={isoToDatetimeLocal(from)}
-          onChange={(e) => setFrom(datetimeLocalToIso(e.target.value))}
+          onChange={(e) => setFrom(datetimeLocalToIso(e.target.value, DEFAULT_FROM))}
         />
       </label>
       <label style={{ ...fieldLabelStyle, marginTop: 8 }}>
@@ -51,7 +58,7 @@ export default function SearchPanel() {
         <input
           type="datetime-local"
           value={isoToDatetimeLocal(to)}
-          onChange={(e) => setTo(datetimeLocalToIso(e.target.value))}
+          onChange={(e) => setTo(datetimeLocalToIso(e.target.value, DEFAULT_TO))}
         />
       </label>
     </div>

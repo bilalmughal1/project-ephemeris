@@ -21,8 +21,8 @@ export const DATA_RANGE_TO = "2027-03-08T00:00:00Z";
 // mass. Check more satellites or widen the time inputs (up to
 // DATA_RANGE_TO) to load more.
 const DEFAULT_SATELLITES = ["YAM20", "YAM21"];
-const DEFAULT_FROM = "2027-03-01T00:00:00Z";
-const DEFAULT_TO = "2027-03-02T00:00:00Z";
+export const DEFAULT_FROM = "2027-03-01T00:00:00Z";
+export const DEFAULT_TO = "2027-03-02T00:00:00Z";
 
 export type AppMode = "browse" | "search";
 

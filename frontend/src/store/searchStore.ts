@@ -7,8 +7,8 @@ export interface SearchPoint {
 }
 
 const DEFAULT_RADIUS_KM = 500;
-const DEFAULT_FROM = "2027-03-01T00:00:00Z";
-const DEFAULT_TO = "2027-03-02T00:00:00Z";
+export const DEFAULT_FROM = "2027-03-01T00:00:00Z";
+export const DEFAULT_TO = "2027-03-02T00:00:00Z";
 
 interface SearchState {
   point: SearchPoint | null;

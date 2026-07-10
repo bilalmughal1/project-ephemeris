@@ -13,6 +13,42 @@ const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 const INITIAL_CENTER: [number, number] = [55, 25];
 const INITIAL_ZOOM = 2;
 
+// Prefer English labels on the basemap; fall back to the default name so
+// labels never go blank where name:en is missing.
+const ENGLISH_LABEL_EXPRESSION = [
+  "coalesce",
+  ["get", "name:en"],
+  ["get", "name"],
+] as unknown as maplibregl.ExpressionSpecification;
+
+// Basemap label text-fields reference a name field either as a legacy
+// "{name:latin}"-style template string or as a get/coalesce expression.
+// Recurse into expressions so both forms are detected.
+function referencesNameField(expr: unknown): boolean {
+  if (typeof expr === "string") return expr.includes("{name");
+  if (Array.isArray(expr)) {
+    if (expr[0] === "get" && typeof expr[1] === "string" && expr[1].startsWith("name")) {
+      return true;
+    }
+    return expr.some(referencesNameField);
+  }
+  return false;
+}
+
+// Force English-only basemap labels: only touches pre-existing symbol
+// layers from the OpenFreeMap style whose text-field is name-derived --
+// does not touch the passes/search-results/radius/marker layers below,
+// none of which are symbol layers.
+function forceEnglishLabels(map: maplibregl.Map): void {
+  const layers = map.getStyle()?.layers ?? [];
+  for (const layer of layers) {
+    if (layer.type !== "symbol") continue;
+    const textField = layer.layout?.["text-field"];
+    if (textField === undefined || !referencesNameField(textField)) continue;
+    map.setLayoutProperty(layer.id, "text-field", ENGLISH_LABEL_EXPRESSION);
+  }
+}
+
 const PASSES_SOURCE_ID = "passes";
 const PASSES_LINE_LAYER_ID = "passes-lines";
 const SEARCH_RADIUS_SOURCE_ID = "search-radius";
@@ -94,6 +130,8 @@ export default function Map() {
     map.addControl(new maplibregl.NavigationControl());
 
     map.on("load", () => {
+      forceEnglishLabels(map);
+
       map.addSource(PASSES_SOURCE_ID, {
         type: "geojson",
         data: EMPTY_PASSES,
