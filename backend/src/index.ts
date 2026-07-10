@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { initDatabase } from "./database/db.js";
-import telemetryRouter from "./routes/telemetry.routes.js"; // Import our new routing layer
 import passesRouter from "./routes/passes.routes.js";
 
 dotenv.config();
@@ -22,7 +21,6 @@ app.get("/health", (req, res) => {
 });
 
 // Mount modular API routing entry points
-app.use("/api/telemetry", telemetryRouter);
 app.use("/api/passes", passesRouter);
 
 const startServer = async () => {
@@ -33,7 +31,7 @@ const startServer = async () => {
       `[Server] Telemetry service running on http://localhost:${PORT}`,
     );
     console.log(
-      `[Server] API Endpoint live at http://localhost:${PORT}/api/telemetry`,
+      `[Server] API Endpoint live at http://localhost:${PORT}/api/passes`,
     );
   });
 };
