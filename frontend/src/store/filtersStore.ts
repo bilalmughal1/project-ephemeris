@@ -24,19 +24,25 @@ const DEFAULT_SATELLITES = ["YAM20", "YAM21"];
 const DEFAULT_FROM = "2027-03-01T00:00:00Z";
 const DEFAULT_TO = "2027-03-02T00:00:00Z";
 
+export type AppMode = "browse" | "search";
+
 interface FiltersState {
+  mode: AppMode;
   satellites: string[];
   from: string;
   to: string;
+  setMode: (mode: AppMode) => void;
   toggleSatellite: (satellite: string) => void;
   setFrom: (from: string) => void;
   setTo: (to: string) => void;
 }
 
 export const useFiltersStore = create<FiltersState>((set) => ({
+  mode: "browse",
   satellites: [...DEFAULT_SATELLITES],
   from: DEFAULT_FROM,
   to: DEFAULT_TO,
+  setMode: (mode) => set({ mode }),
   toggleSatellite: (satellite) =>
     set((state) => ({
       satellites: state.satellites.includes(satellite)

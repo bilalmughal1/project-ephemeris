@@ -105,3 +105,42 @@ Aggressive Data Thinning (Dropping Coordinate Vertices globally): We could have 
 ## Current Limitations
 
 While the single-day subset handles the noise on initial load, a user manually toggling all 10 satellites back on will still encounter the dense wireframe effect. Future iterations could incorporate zoom-dependent line decimation (simplifying geometries when zoomed out) or auto-bounding the temporal parameters to match only the visible map viewport.
+
+## Function 2: Location Search — Mode Separation, Whole-Pass Results, and Map/Table Sync
+
+## The Problem
+
+Function 2 (point-and-radius search) introduces a fundamentally different interaction pattern from Function 1 (global browsing)—transitioning the application from a macro-level overview to a micro-level local focus. This transition creates two core challenges:
+
+Visual Pollution: Layering localized search results directly on top of the global browsing tracks would cause the visual density of the overview to clutter the clarity of the local search.
+
+State Disconnection: Displaying data across both a map canvas and a tabular results view introduces the risk of disjointed views, where the user cannot intuitively correlate a text row with a spatial line.
+
+## The Decisions
+
+1. UI Mode Separation (State Toggling)
+   Instead of forcing both operations onto a single screen, I implemented an explicit UI mode switch ("Browse Tracks" vs. "Search by Location"). This separation reflects the overview-vs-focus architecture directly within the interface. When Search Mode is active, the global browsing layer's visibility is toggled off (hidden via MapLibre layout properties rather than tearing down the source data entirely). This ensures the map remains uncluttered and dedicated purely to the active query results.
+
+2. Whole-Pass Rendering
+   When a satellite intersects the user's search radius, the map renders the entire matching trajectory in full, even where the path extends far beyond the perimeter of the search circle. This choice was driven by operational requirements: a satellite pass qualifies as an event if any segment of its flight path enters the radius, and the entire continuous trajectory represents the operationally meaningful unit for tracking and downlinking. Clipping the geometry strictly at the circle's boundary remains a documented enhancement rather than a functional bug.
+
+3. One-Way Table-to-Map Synchronization
+   To bridge the gap between text and spatial graphics, I established a strict one-way synchronization from the Accesses data table to the map canvas. Clicking a row in the results table dynamically updates the MapLibre feature-state, instantly highlighting the corresponding trajectory on the map in high-contrast magenta. The implementation uses native MapLibre feature IDs keyed on generateId, and rows are maintained in raw feature order to keep array indices aligned.
+
+## Domain Justification & Rationale
+
+A satellite pass cannot be meaningfully analyzed in isolation as a clipped fragment; an operator needs to see where the satellite came from and where it is heading to evaluate visibility windows and horizon constraints.
+
+For the state synchronization, choosing a unidirectional binding (Table-to-Map) over a full bidirectional loop was a deliberate choice to ensure predictability. Two-way data binding across independent UI components (a canvas renderer and a DOM table) frequently introduces race conditions, infinite render loops, and complex state synchronization bugs. Gating a working feature behind complex state reconciliation wasn't justified; the one-way link provides a reliable, verifiable user workflow while keeping the codebase maintainable.
+
+## Rejected Alternatives
+
+Layering Search Results over the Global Grid: This was rejected because it instantly recreates the visual crowding problem that progressive disclosure fought to solve in Function 1.
+
+Geometric Boundary Clipping: I rejected clipping the lines at the radius edge because a clipped line misrepresents the true continuous nature of an orbit, stripping away critical context regarding the satellite's approach and departure vectors.
+
+## Current Limitations
+
+The search radius visualization utilizes a standard visual polygon approximation. Consistent with our global geometry handling, it does not special-case the antimeridian; executing a location search near ±180° longitude will cause the visual circle geometry to streak across the map.
+
+Reverse synchronization (clicking a line on the map to highlight a row in the table) is deferred to a future architectural iteration.
