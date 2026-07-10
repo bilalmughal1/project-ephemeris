@@ -77,3 +77,31 @@ However, in a satellite operations context, this error profile works in our favo
 ## Rejected Alternatives
 
 Densified Linear Interpolation: We attempted to patch the vertex spacing gap by injecting interpolated points along the line string to create a dense path. This was rejected because interpolating raw, unprojected longitude/latitude coordinates lacks antimeridian awareness. When a satellite crosses the International Date Line, a naive interpolation algorithm draws a bogus straight path backward across the entire globe to connect the coordinates. This error manufactures massive false positives—calculating a proximity of 293km for a satellite that was physically 13,807km away on the other side of the planet. True point-to-line calculation requires heavy antimeridian-aware splitting or custom user-defined functions (UDFs), which are reserved for the next architectural iteration.
+
+## Global Map Density: Progressive Disclosure and Scope Separation
+
+## The Problem
+
+The dataset tracks 10 satellites orbiting the globe roughly every 90 minutes over a continuous seven-day horizon. Attempting to render all 100,810 raw passes simultaneously on the initial load creates an unreadable, overlapping mass of lines across the map canvas. When the visualization displays everything at once, it communicates nothing—individual trajectories, timestamps, and specific satellite profiles are entirely lost in the clutter.
+
+## The Decision
+
+I implemented a progressive disclosure strategy for the primary map layer. The opening view defaults to a strictly controlled, legible subset of the data: 2 satellites (YAM20 and YAM21) over a single 24-hour window. To maximize trace clarity within this view, I applied thin, semi-transparent lines mapped to distinct per-satellite colors.
+
+This default configuration is intended as an entry point into the dataset, not an artificial limitation. The entire underlying 100,810-record corpus remains instantly accessible. The backend query handles the filtering down to a ~2ms response time, while the frontend utilizes a single-source configuration that updates via a reactive setData pattern, satisfying the architectural requirement to refresh the viewport quasi-instantly when user selections change.
+
+## Domain Justification & Honest Nuance
+
+It is critical to acknowledge that even when narrowed to 2 satellites over a single day, the whole-globe projection remains visually dense. This crowding is not an engineering failure; it is an inherent characteristic of continuous global orbital data.
+
+Because a global overview cannot be completely pristine without heavily modifying the true paths, Function 1 is designed to serve strictly as a macro-level overview tool. Genuinely clear, uncluttered readability is deliberately delegated to Function 2 (the point-and-radius query). By splitting the system's goals into distinct tools—overview versus location-specific focus—the interface avoids over-simplifying the global reality while still offering a practical way to isolate clean operational data.
+
+## Rejected Alternatives
+
+Defaulting to Full Dataset Load: Rendering all 10 satellites for the entire week on initial load was rejected immediately. While modern WebGL engines can ingest the full payload without crashing, the resulting visualization is a solid, unreadable mass that completely defeats the purpose of an operational display and violates the explicit warnings in the project documentation.
+
+Aggressive Data Thinning (Dropping Coordinate Vertices globally): We could have artificially trimmed every third position to force a cleaner look, but dropping true orbital telemetry data on a tracking overview reduces accuracy for no functional reason.
+
+## Current Limitations
+
+While the single-day subset handles the noise on initial load, a user manually toggling all 10 satellites back on will still encounter the dense wireframe effect. Future iterations could incorporate zoom-dependent line decimation (simplifying geometries when zoomed out) or auto-bounding the temporal parameters to match only the visible map viewport.
