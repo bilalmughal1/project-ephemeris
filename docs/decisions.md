@@ -144,3 +144,42 @@ Geometric Boundary Clipping: I rejected clipping the lines at the radius edge be
 The search radius visualization utilizes a standard visual polygon approximation. Consistent with our global geometry handling, it does not special-case the antimeridian; executing a location search near ±180° longitude will cause the visual circle geometry to streak across the map.
 
 Reverse synchronization (clicking a line on the map to highlight a row in the table) is deferred to a future architectural iteration.
+
+Here is the finalized, hardened version of the testing strategy entry with those two precision fixes implemented:
+
+## Testing Strategy: Fixture-Based Unit Tests Against the Real Ingestion Path
+
+## The Problem
+
+The production backend queries a live DuckDB instance ingested from a 60MB telemetry file that is gitignored and completely absent in continuous integration (CI) environments. Unit tests cannot rely on this massive, volatile production state. Furthermore, integration tests require deterministic, known-answer datasets to validate boundary conditions, edge cases, and query math with absolute precision.
+
+## The Decisions
+
+1. Real Ingestion via Environment Seams
+   Rather than stubbing out database calls or hardcoding mock controller responses, the test suite utilizes a small, hand-crafted GeoJSON fixture containing intentional boundary test cases. This fixture is passed through the exact production initDatabase ingestion routine—meaning the test run actively exercises the underlying ST_MakeLine geometry mapping and typed-column SQL setup. To isolate the test run, we reuse the DATA_DIR and DB_DIR environment variable seams originally introduced for Docker container orchestration to target a temporary test directory.
+
+2. Lifecycle Process Isolation
+   To make the database initialization engine safely testable, I refactored initDatabase to throw errors upstream instead of executing an un-catchable process.exit(1) on exception. This change opens up the database lifecycle to unit-test assertions (allowing tests to deliberately pass malformed schemas and assert on failure handling) while preserving the critical fail-fast-on-boot behavior at the process level within the main application entry point (index.ts).
+
+3. Assertion Anchoring to Architectural Decisions
+   The test suite was explicitly designed to validate the core architectural decisions of Project Ephemeris rather than chasing arbitrary code coverage lines. Specific test suites assert on:
+
+Interval-Overlap Semantics: Verifying that boundary-straddling passes are correctly captured when querying a strict time window.
+
+Satellite Identity Filtering: Ensuring correct data routing and filtering for isolated satellite identifiers using the test fixture's synthetic names (e.g., SAT-A).
+
+Spatial Proximity Queries: Validating the vertex-distance calculation against a known coordinate threshold (using a precise ~777km test radius).
+
+SQL Injection Mitigation: Explicitly passing malicious strings into filtering parameters to verify that raw inputs are bound as literal parameters via placeholders, never concatenated into the raw SQL string, preventing them from ever being interpreted as executable commands by DuckDB.
+
+## Domain Justification & Rationale
+
+Mocking database queries in analytical or spatial pipelines often hides the very bugs you are trying to catch—such as typing mismatch errors or incorrect geometric transformations. Running the actual ingestion pass against an isolated mini-database ensures that if a DuckDB function or spatial query breaks, the CI environment flags it instantly.
+
+## Rejected Alternatives
+
+Mocking the Database Layer (Mocks/Stubs): This was rejected because it only tests whether the TypeScript controller calls a specific mock function, not whether the SQL logic evaluates spatial arrays correctly. It would mask bugs related to DuckDB's native execution engine or coordinate parsing.
+
+## Current Limitations
+
+On Windows platforms, the legacy duckdb binary bindings occasionally hold onto the local database file handle even after the close() callback resolves. As a result, automated cleanup scripts may leave a temporary file artifact in the local directory post-test. This limitation does not impact test assertions or production Linux/Docker container behavior, but it serves as an additional architectural justification for migrating to the modern @duckdb/node-api package in the next development cycle.
