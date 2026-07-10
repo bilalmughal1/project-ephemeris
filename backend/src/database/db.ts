@@ -138,6 +138,6 @@ export const initDatabase = async (): Promise<void> => {
     );
   } catch (error) {
     console.error("[Database] Critical initialization failure:", error);
-    process.exit(1);
+    throw error;
   }
 };

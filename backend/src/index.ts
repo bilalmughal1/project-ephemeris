@@ -41,4 +41,5 @@ startServer().catch((err) => {
     "[Server] Critical failure bootstrapping Express application layer:",
     err,
   );
+  process.exit(1);
 });
