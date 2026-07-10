@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Ephemeris is a spatiotemporal satellite pass visualization app: a React/MapLibre frontend backed by an Express API that serves satellite pass data out of DuckDB with its spatial extension. It's an npm workspaces monorepo (`backend`, `frontend`) currently in Phase 1 (core infrastructure) — the frontend is still Vite boilerplate; the backend has a working pass ingestion + spatial query API.
+Ephemeris is a spatiotemporal satellite pass visualization app: a React/MapLibre frontend backed by an Express API that serves satellite pass data out of DuckDB with its spatial extension. It's an npm workspaces monorepo (`backend`, `frontend`); both the frontend (map + filter/search UI) and backend (pass ingestion + spatial query API) are implemented.
 
 ## Commands
 
@@ -36,7 +36,13 @@ When adding new data endpoints, follow the existing route → controller → `qu
 
 ### Frontend (`frontend/src`)
 
-Standard Vite + React 19 + TypeScript template, not yet built out — `App.tsx` is still the scaffold starter page. Intended stack per the stack description: MapLibre GL JS for the map view, Zustand for client state, TanStack React Query for server state/data fetching against the backend API. `services/`, `store/`, `hooks/`, `pages/`, `types/`, `utils/` directories exist but are currently empty — establish conventions there as real features land.
+React 19 + TypeScript (Vite). MapLibre GL JS renders the map (OpenFreeMap dark basemap); Zustand (`store/`) holds filter/search UI state; TanStack React Query (`hooks/`) fetches from the backend via Vite's dev-server proxy (`/api` → `http://localhost:4000`, configured in `vite.config.ts`).
+
+Two modes, toggled via `components/ModeSwitch.tsx`:
+- **Browse Tracks** (Function 1) — `FilterPanel.tsx` filters passes by satellite and time range; results draw as colored tracks on `Map.tsx`.
+- **Search by Location** (Function 2) — `SearchPanel.tsx` takes a map click plus radius + date range; matches render on the map and in `AccessesTable.tsx`, a synchronized table with one-way row→map highlighting.
+
+`services/` wraps the two API calls (`passesApi.ts`, `searchApi.ts`); `types/passes.ts` holds shared response types; `utils/geoCircle.ts` computes the search-radius circle overlay.
 
 ### Data flow
 
