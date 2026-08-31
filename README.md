@@ -1,104 +1,483 @@
 # Ephemeris
 
-Ephemeris is a full-stack spatiotemporal satellite-pass visualization app. It's map-centric: a React/MapLibre frontend backed by an Express API that serves satellite pass data out of DuckDB (with its spatial extension) for great-circle proximity and geometry queries. Two core functions cover browsing and searching satellite passes.
+**A full-stack spatiotemporal satellite-pass visualization application built with React, TypeScript, MapLibre GL JS, Express, and DuckDB Spatial.**
 
-## Functions
+Ephemeris is a map-centric application for exploring satellite passes across time and geographic locations.
 
-- **Browse Tracks** — filter satellite passes by satellite and time range; results render as colored tracks on a MapLibre map.
-- **Search by Location** — click a point on the map, set a radius (km) and date range, and see matching passes both on the map and in a synchronized Accesses table.
+It provides two core workflows:
 
-## Tech stack
+- **Browse Tracks:** filter satellite passes by satellite and time range, then visualize the resulting trajectories on an interactive map.
+- **Search by Location:** select a location, define a search radius and date range, and find satellite passes matching the geographic and temporal criteria.
 
-**Backend**
-- Node.js, Express, TypeScript
-- DuckDB + spatial extension — great-circle proximity search and geometry built directly from track coordinates
+The application was built as a full-stack engineering project with a focus on geospatial computation, frontend architecture, API design, testing, containerization, and CI validation.
 
-**Frontend**
-- React 19, TypeScript, Vite
-- MapLibre GL JS — map rendering
-- Zustand — client/filter state
-- TanStack React Query — server-state data fetching
-- OpenFreeMap — keyless OSM vector basemap (no API key required)
+---
 
-**Tooling**
-- ESLint, Prettier
-- Vitest (backend unit tests)
-- Docker + Docker Compose
-- GitHub Actions CI
+## Demo
 
-## Prerequisites
+### Browse Tracks
 
-- Node.js 24, npm
-- Docker (optional — only needed for the containerized path)
+Filter satellite passes by satellite and time range, then visualize their trajectories on an interactive MapLibre map.
 
-**⚠️ Required dataset file:** the app needs `Altair-2P5S-tracks-1w.json` (~60MB) placed at `./data/Altair-2P5S-tracks-1w.json`. It is *not* included in this repo — it's gitignored due to size. Nothing renders without it. Place it before running either path below.
+![Ephemeris Browse Tracks](live-demo/browse-tracks-1.png)
 
-## How to run
+Explore satellite trajectories across the map and inspect the resulting pass data.
 
-### Docker (recommended)
+![Ephemeris Browse Tracks](live-demo/browse-tracks-2.png)
 
-```bash
-# 1. Place the dataset file first:
-#    ./data/Altair-2P5S-tracks-1w.json
+### Search by Location
 
-docker compose up
+Select a point on the map, define a search radius and date range, and find matching satellite passes.
+
+Results are displayed both geographically on the map and in a synchronized Accesses table.
+
+![Ephemeris Search by Location](live-demo/search-by-location.png)
+
+---
+
+## Architecture
+
+Ephemeris uses a separated frontend and backend architecture.
+
+```text
+┌─────────────────────────────────────────────┐
+│                React Frontend               │
+│                                             │
+│ React 19 · TypeScript · Vite                │
+│ MapLibre GL JS · Zustand · React Query      │
+└──────────────────────┬──────────────────────┘
+                       │
+                       │ REST API
+                       ▼
+┌─────────────────────────────────────────────┐
+│                 Express API                 │
+│                                             │
+│ Node.js · TypeScript                        │
+│ Controllers · Routes                        │
+└──────────────────────┬──────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────┐
+│              DuckDB + Spatial               │
+│                                             │
+│ Satellite track data                        │
+│ Geometry construction                       │
+│ Geographic proximity queries                │
+│ Temporal filtering                           │
+└─────────────────────────────────────────────┘
 ```
 
-- Frontend: [http://localhost:3000](http://localhost:3000)
-- Backend API: [http://localhost:4000](http://localhost:4000)
+The frontend handles interaction, visualization, client-side state, and server-state management.
 
-### Local dev
+The backend exposes the satellite-pass API and performs spatial and temporal queries against DuckDB.
 
-```bash
-# 1. Place the dataset file first:
-#    ./data/Altair-2P5S-tracks-1w.json
+---
 
-npm install
+## Core Features
 
-# In one terminal:
-npm run dev --workspace=backend    # http://localhost:4000
+### Browse Tracks
 
-# In another terminal:
-npm run dev --workspace=frontend   # http://localhost:5173
+Browse satellite passes using:
+
+- Satellite selection
+- Time-range filtering
+- Interactive map visualization
+- Satellite trajectory rendering
+
+The resulting passes are rendered as tracks on the MapLibre map.
+
+### Search by Location
+
+Search for satellite passes using:
+
+- A point selected directly on the map
+- Search radius in kilometres
+- Date range
+- Spatial proximity matching
+- Temporal filtering
+
+Matching passes are displayed on the map and in the Accesses table.
+
+Selecting a table row highlights the corresponding track on the map.
+
+---
+
+## Technical Implementation
+
+### Frontend
+
+The frontend is built with React 19 and TypeScript.
+
+**MapLibre GL JS** provides the interactive map and satellite trajectory visualization.
+
+**Zustand** manages client-side filter and search state.
+
+**TanStack React Query** manages server-state fetching and caching.
+
+Vite provides the development server and frontend build pipeline.
+
+### Backend
+
+The API is implemented using Node.js, Express, and TypeScript.
+
+The backend provides endpoints for satellite-pass browsing and geographic searches, with filtering performed using satellite, geographic, and temporal criteria.
+
+### Spatial Data
+
+DuckDB with its Spatial extension is used for data processing and geographic queries.
+
+Satellite track coordinates are converted into spatial geometry, allowing geographic proximity and geometry operations to be performed directly within the database layer.
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- React 19
+- TypeScript
+- Vite
+- MapLibre GL JS
+- Zustand
+- TanStack React Query
+- CSS
+
+### Backend
+
+- Node.js
+- Express
+- TypeScript
+- DuckDB
+- DuckDB Spatial extension
+
+### Geospatial
+
+- Spatial geometry
+- Geographic proximity queries
+- Temporal filtering
+- Satellite track visualization
+- MapLibre GL JS
+- GeoJSON
+
+### Testing & Tooling
+
+- Vitest
+- ESLint
+- Stylelint
+- Prettier
+- Docker
+- Docker Compose
+- GitHub Actions
+
+---
+
+## Data Flow
+
+A typical location search follows this flow:
+
+```text
+User selects location
+        │
+        ▼
+User defines radius + date range
+        │
+        ▼
+React state
+        │
+        ▼
+TanStack React Query
+        │
+        ▼
+Express API
+        │
+        ▼
+DuckDB Spatial query
+        │
+        ├─────────────────┐
+        ▼                 ▼
+Matching tracks      Accesses data
+        │                 │
+        └────────┬────────┘
+                 ▼
+          React application
+                 │
+          ┌──────┴──────┐
+          ▼             ▼
+       MapLibre       Table
 ```
 
-The frontend dev server proxies `/api` requests to the backend (`http://localhost:4000` by default), so no CORS setup is needed locally.
+This keeps spatial querying in the data layer while allowing the frontend to focus on visualization and interaction.
 
-## Testing & quality
+---
+
+## Testing & Quality
+
+The backend includes fixture-based unit tests covering:
+
+- Time-overlap filtering
+- Satellite filtering
+- Spatial search behaviour
+- Injection-safety cases
+
+Run the backend tests with:
 
 ```bash
-# Backend unit tests (Vitest) — fixture-based, does NOT need the 60MB data file
 npm run test --workspace=backend
+```
 
-# Lint
+Run backend linting with:
+
+```bash
 npm run lint --workspace=backend
+```
+
+Run frontend linting with:
+
+```bash
 npm run lint --workspace=frontend
 ```
 
-GitHub Actions runs lint, tests, and build for both workspaces on every push and pull request to `main` — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+GitHub Actions runs linting, tests, and builds for both workspaces on pushes and pull requests to `main`.
 
-## Project structure
+The CI configuration also includes a Docker image build job to verify that the containers can be built successfully on clean infrastructure.
 
+---
+
+## Running Locally
+
+### Prerequisites
+
+- Node.js 24
+- npm
+- Docker, optional
+
+### Required Dataset
+
+The application requires the following satellite track dataset:
+
+```text
+data/Altair-2P5S-tracks-1w.json
 ```
-backend/    Express API, DuckDB ingestion, controllers/routes, tests/
-frontend/   React + MapLibre UI (Browse Tracks, Search by Location)
-data/       Place the dataset file here (gitignored, not in repo)
-docs/       decisions.md — engineering decision log
+
+The dataset is approximately 60 MB and is intentionally excluded from the repository because of its size.
+
+Place the file at:
+
+```text
+./data/Altair-2P5S-tracks-1w.json
 ```
 
-## Engineering decisions
+before running the application.
 
-Key technical decisions — geometry construction, time-overlap filtering semantics, spatial proximity method, global map display density, and testing strategy — are recorded with their rationale, alternatives considered, and known limitations in [`docs/decisions.md`](docs/decisions.md). This README stays operational; that file is the "why."
+The `data/` directory is gitignored.
 
-## Use of AI coding agents
+The application requires this dataset to render satellite-pass data.
 
-This project was implemented using Claude Code, with an Opus-based advisor consulted at key decision points, under a workflow where each change was reviewed before being written. `CLAUDE.md` documents the working context given to the agent.
+---
 
-## Known limitations & future work
+## Docker
 
-These are deliberate, documented trade-offs — not oversights:
+Docker Compose is the recommended way to run the complete application.
 
-- **Search-radius results aren't clipped to the radius.** A matching pass renders as its full trajectory, not just the segment inside the search circle (see `docs/decisions.md`).
-- **The search-radius circle doesn't special-case the antimeridian.** A search near ±180° longitude will visually streak across the map.
-- **Map→table sync is one-way.** Clicking a table row highlights the corresponding track on the map; clicking a track on the map does not yet select its table row.
-- **Backend still uses the legacy `duckdb` npm package**, not the newer `@duckdb/node-api`. A known effect: on Windows, the legacy binding can hold the database file handle open briefly after `close()` resolves, which can leave a stray temp directory after a local test run (harmless, doesn't affect test correctness or Linux/Docker behavior). Migrating to `@duckdb/node-api` is a planned next step.
+After placing the dataset in the required location:
+
+```bash
+docker compose up
+```
+
+The application will be available at:
+
+```text
+Frontend: http://localhost:3000
+Backend:  http://localhost:4000
+```
+
+---
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the backend:
+
+```bash
+npm run dev --workspace=backend
+```
+
+Start the frontend in a second terminal:
+
+```bash
+npm run dev --workspace=frontend
+```
+
+The frontend development server proxies `/api` requests to the backend at:
+
+```text
+http://localhost:4000
+```
+
+The frontend is available at:
+
+```text
+http://localhost:5173
+```
+
+No separate CORS configuration is required for the local development setup.
+
+---
+
+## Project Structure
+
+```text
+project-ephemeris/
+│
+├── backend/
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── database/
+│   │   ├── routes/
+│   │   └── index.ts
+│   ├── tests/
+│   └── ...
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   ├── store/
+│   │   ├── utils/
+│   │   └── ...
+│   └── ...
+│
+├── data/
+│   └── Altair-2P5S-tracks-1w.json
+│
+├── docs/
+│   └── decisions.md
+│
+├── live-demo/
+│   ├── browse-tracks-1.png
+│   ├── browse-tracks-2.png
+│   └── search-by-location.png
+│
+├── docker-compose.yml
+├── package.json
+└── README.md
+```
+
+---
+
+## Engineering Decisions
+
+Key technical decisions are documented in:
+
+[`docs/decisions.md`](docs/decisions.md)
+
+The decision log records the reasoning behind important implementation choices, including:
+
+- Geometry construction
+- Time-overlap filtering semantics
+- Spatial proximity methodology
+- Global map display density
+- Testing strategy
+- Known implementation trade-offs
+
+The README focuses on how the system works and how to run it, while the decision log documents why specific approaches were selected.
+
+---
+
+## Known Limitations
+
+These are documented implementation trade-offs and known areas for future improvement.
+
+### Search-radius results are not clipped to the radius
+
+A matching satellite pass is rendered as its complete trajectory rather than only the segment that falls within the selected search radius.
+
+### Antimeridian handling
+
+The search-radius visualization does not currently special-case locations near ±180° longitude.
+
+A search near the antimeridian can consequently produce an incorrect visual streak across the map.
+
+### Map and table synchronization
+
+The current synchronization is one-way.
+
+Selecting an Accesses table row highlights the corresponding track on the map.
+
+Selecting a track directly on the map does not currently select the corresponding table row.
+
+### DuckDB Node package
+
+The backend currently uses the legacy `duckdb` npm package rather than the newer `@duckdb/node-api`.
+
+On Windows, the legacy binding can retain the database file handle briefly after `close()` resolves, which can leave a temporary directory after local test execution.
+
+This does not affect test correctness or Linux/Docker operation.
+
+Migration to `@duckdb/node-api` is planned.
+
+---
+
+## AI-Assisted Development
+
+Claude Code was used as an engineering development tool during implementation.
+
+Changes were reviewed before being incorporated into the project.
+
+The repository includes automated tests, linting, CI validation, documented engineering decisions, and explicit known limitations.
+
+AI assistance was part of the development workflow, while engineering decisions, implementation review, testing, and verification remained part of the development process.
+
+---
+
+## Future Work
+
+Potential improvements include:
+
+- Clip displayed trajectories to the selected search radius
+- Improve antimeridian handling
+- Add bidirectional map and table selection
+- Migrate to `@duckdb/node-api`
+- Expand frontend integration and end-to-end test coverage
+- Continue improving spatial query performance
+- Improve visualization density and large-result handling
+
+---
+
+## What This Project Demonstrates
+
+Ephemeris brings together several areas of modern software engineering:
+
+- React and TypeScript application architecture
+- Interactive geospatial visualization
+- REST API development
+- Spatial database querying
+- Client and server state management
+- Automated testing
+- Docker-based development
+- CI/CD
+- Data processing
+- Engineering decision documentation
+- Security-conscious API design
+- Performance and scalability considerations
+
+The project was designed around a concrete geospatial problem rather than as a collection of isolated technology demonstrations.
+
+---
+
+## Author
+
+**Fahad Bilal Saleem**
+
+Senior Full-Stack Engineer · AI Systems Engineer · Technical Lead
+
+- Portfolio: [fahadbilal.com](https://fahadbilal.com)
+- GitHub: [github.com/bilalmughal1](https://github.com/bilalmughal1)
+- LinkedIn: [linkedin.com/in/fahadbilalsaleem](https://www.linkedin.com/in/fahadbilalsaleem)
