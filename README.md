@@ -425,17 +425,6 @@ Migration to `@duckdb/node-api` is planned.
 
 ---
 
-## AI-Assisted Development
-
-Claude Code was used as an engineering development tool during implementation.
-
-Changes were reviewed before being incorporated into the project.
-
-The repository includes automated tests, linting, CI validation, documented engineering decisions, and explicit known limitations.
-
-AI assistance was part of the development workflow, while engineering decisions, implementation review, testing, and verification remained part of the development process.
-
----
 
 ## Future Work
 
